@@ -1,7 +1,7 @@
 // lib/math_test.dart
 int add(int a, int b) {
   // 나중에 기능 구현
-  return 0;
+  return a + b;
 }
 
 int subtract(int a, int b) {
@@ -11,6 +11,7 @@ int subtract(int a, int b) {
 
 int multiply(int a, int b) {
   // 나중에 기능 구현
+
   return a*b;
 }
 
