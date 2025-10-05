@@ -1,0 +1,236 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; // 이 줄이 추가되었습니다.
+
+Future<void> main() async { // main 함수가 이 부분으로 교체되었습니다.
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('ko_KR', null);
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: '출석뷰',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0.5,
+        ),
+      ),
+      home: const AttendanceView(),
+    );
+  }
+}
+
+class AttendanceView extends StatefulWidget {
+  const AttendanceView({super.key});
+
+  @override
+  State<AttendanceView> createState() => _AttendanceViewState();
+}
+
+class _AttendanceViewState extends State<AttendanceView> {
+  // 상태 변수
+  bool _isInLab = false;
+  String _timestamp = "마지막 체크아웃: 어제 18:30";
+
+  // 상태 변경 함수
+  void _checkIn() {
+    setState(() {
+      _isInLab = true;
+      _updateTimestamp();
+    });
+  }
+
+  void _checkOut() {
+    setState(() {
+      _isInLab = false;
+      _updateTimestamp();
+    });
+  }
+
+  void _toggleStatus(bool newStatus) {
+    if (newStatus) {
+      _checkIn();
+    } else {
+      _checkOut();
+    }
+  }
+
+  void _updateTimestamp() {
+    final nowString = DateFormat('오늘 HH:mm', 'ko_KR').format(DateTime.now());
+    if (_isInLab) {
+      _timestamp = "마지막 체크인: $nowString";
+    } else {
+      _timestamp = "마지막 체크아웃: $nowString";
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "랩실 상태",
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildStatusCard(),
+            const SizedBox(height: 24),
+            _buildActionButtons(),
+            const SizedBox(height: 24),
+            const Divider(),
+            _buildToggleSwitch(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  AppBar _buildAppBar() {
+    return AppBar(
+      leading: const Icon(Icons.menu_book_outlined, color: Colors.black54),
+      title: const Text("출석뷰", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      actions: [
+        Row(
+          children: [
+            const Text("김학생", style: TextStyle(fontSize: 16)),
+            const SizedBox(width: 8),
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+              child: const Text("김", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(width: 16),
+          ],
+        )
+      ],
+    );
+  }
+
+  Widget _buildStatusCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _isInLab ? Icons.check_circle_outline : Icons.watch_later_outlined,
+            color: _isInLab ? Colors.orange : Colors.grey,
+            size: 40,
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _isInLab ? "현재 랩실에 있습니다" : "랩실 밖에 있습니다",
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _timestamp,
+                style: const TextStyle(fontSize: 14, color: Colors.black54),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.arrow_forward_ios, size: 16),
+            label: const Text("들어오기"),
+            onPressed: _isInLab ? null : _checkIn,
+            style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: _isInLab ? Colors.grey[300] : Colors.orange,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: OutlinedButton.icon(
+            icon: const Icon(Icons.arrow_back_ios, size: 16),
+            label: const Text("나가기"),
+            onPressed: !_isInLab ? null : _checkOut,
+            style: ButtonStyle(
+              foregroundColor: MaterialStateProperty.resolveWith<Color?>(
+                    (Set<MaterialState> states) {
+                  if (states.contains(MaterialState.disabled)) {
+                    return Colors.grey[400];
+                  }
+                  return Colors.black54;
+                },
+              ),
+              side: MaterialStateProperty.all(
+                BorderSide(color: Colors.grey[300]!),
+              ),
+              padding: MaterialStateProperty.all(
+                const EdgeInsets.symmetric(vertical: 16),
+              ),
+              shape: MaterialStateProperty.all(
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToggleSwitch() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          "직접 상태 변경",
+          style: TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+        Switch(
+          value: _isInLab,
+          onChanged: _toggleStatus,
+          activeTrackColor: Colors.orange.shade200,
+          activeThumbColor: Colors.orange,
+        ),
+      ],
+    );
+  }
+}
