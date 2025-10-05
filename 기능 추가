@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart'; // 이 줄이 추가되었습니다.
+import 'package:intl/date_symbol_data_local.dart';
 
-Future<void> main() async { // main 함수가 이 부분으로 교체되었습니다.
+Future<void> main() async { 
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ko_KR', null);
   runApp(const MyApp());
