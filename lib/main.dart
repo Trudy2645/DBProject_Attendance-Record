@@ -1,122 +1,347 @@
 import 'package:flutter/material.dart';
+import 'services/profile_service.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
+const Color primaryOrange = Color(0xFFE8823A);
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demdo',
+      title: '출석부 데모',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: primaryOrange),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const HomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _HomePageState extends State<HomePage> {
+  final ProfileService profileService = ProfileService();
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  String name = '';
+  String studentId = '';
+  String phone = '';
+  String email = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
+    final profileData = await profileService.loadProfile();
+    if (mounted) {
+      setState(() {
+        name = profileData['name']!;
+        studentId = profileData['studentId']!;
+        phone = profileData['phone']!;
+        email = profileData['email']!;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _resetProfile() async {
+    await profileService.clearProfile();
+    await _loadProfileData();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('프로필이 초기화되었습니다.'), duration: Duration(seconds: 2)),
+      );
+    }
+  }
+
+  // 다이얼로그를 보여주는 함수가 매우 간결해졌습니다.
+  void _showEditProfileDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        // 별도로 분리된 다이얼로그 위젯을 호출합니다.
+        return EditProfileDialog(
+          initialName: name,
+          initialStudentId: studentId,
+          initialPhone: phone,
+          initialEmail: email,
+          onSave: (newName, newId, newPhone, newEmail) async {
+            // 저장 로직은 HomePage에서 그대로 처리합니다.
+            await profileService.saveProfile(
+              name: newName,
+              studentId: newId,
+              phone: newPhone,
+              email: newEmail,
+            );
+
+            if (mounted) {
+              setState(() {
+                name = newName;
+                studentId = newId;
+                phone = newPhone;
+                email = newEmail;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('프로필이 저장되었습니다.'), duration: Duration(seconds: 2)),
+              );
+            }
+          },
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    // HomePage의 UI 코드는 변경이 없습니다.
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+        elevation: 0.6,
+        backgroundColor: Colors.white,
+        centerTitle: false,
+        title: const Row(
+          children: [
+            Icon(Icons.book_outlined, color: primaryOrange),
+            SizedBox(width: 8),
+            Text('출석부', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.grey),
+            onPressed: _resetProfile,
+            tooltip: '프로필 초기화',
+          ),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
+              child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.0)),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+              child: Row(
+                children: [
+                  Text(name, style: TextStyle(color: Colors.grey.shade700)),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: _showEditProfileDialog,
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: primaryOrange,
+                      child: Text(
+                        name.isNotEmpty ? name[0] : '?',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            '오른쪽 상단 프로필을 눌러 정보를 수정하세요.\n앱을 종료해도 데이터는 유지됩니다.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// 다이얼로그의 내용물을 별도의 StatefulWidget으로 분리
+// -----------------------------------------------------------------------------
+class EditProfileDialog extends StatefulWidget {
+  final String initialName;
+  final String initialStudentId;
+  final String initialPhone;
+  final String initialEmail;
+  final Future<void> Function(String name, String studentId, String phone, String email) onSave;
+
+  const EditProfileDialog({
+    super.key,
+    required this.initialName,
+    required this.initialStudentId,
+    required this.initialPhone,
+    required this.initialEmail,
+    required this.onSave,
+  });
+
+  @override
+  State<EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<EditProfileDialog> {
+  // State 내부에 컨트롤러를 선언합니다.
+  late final TextEditingController nameController;
+  late final TextEditingController idController;
+  late final TextEditingController phoneController;
+  late final TextEditingController emailController;
+
+  @override
+  void initState() {
+    super.initState();
+    // initState에서 컨트롤러를 안전하게 생성합니다.
+    nameController = TextEditingController(text: widget.initialName);
+    idController = TextEditingController(text: widget.initialStudentId);
+    phoneController = TextEditingController(text: widget.initialPhone);
+    emailController = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    // 위젯이 제거될 때 Flutter가 자동으로 호출해주는 dispose에서 컨트롤러를 해제합니다.
+    nameController.dispose();
+    idController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
+    super.dispose();
+  }
+
+  // 재사용 가능한 입력 필드 위젯
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.grey.shade600),
+        hintText: hint,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: primaryOrange, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('프로필 수정', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  IconButton(
+                    splashRadius: 20,
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  )
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: nameController,
+                  builder: (context, value, _) {
+                    final txt = value.text;
+                    final firstChar = txt.isNotEmpty ? txt[0] : (widget.initialName.isNotEmpty ? widget.initialName[0] : '?');
+                    return CircleAvatar(
+                      radius: 36,
+                      backgroundColor: primaryOrange.withOpacity(0.1),
+                      child: Text(
+                        firstChar,
+                        style: const TextStyle(fontSize: 28, color: primaryOrange, fontWeight: FontWeight.w600),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 6),
+              _buildInputField(controller: nameController, hint: '이름', icon: Icons.person),
+              const SizedBox(height: 10),
+              _buildInputField(controller: idController, hint: '학번', icon: Icons.bookmark_outline),
+              const SizedBox(height: 10),
+              _buildInputField(controller: phoneController, hint: '전화번호', icon: Icons.phone),
+              const SizedBox(height: 10),
+              _buildInputField(controller: emailController, hint: '이메일', icon: Icons.email_outlined),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      foregroundColor: Colors.black87,
+                      backgroundColor: Colors.white,
+                      side: BorderSide(color: Colors.grey.shade300, width: 1),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('취소'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () async {
+                      // 변경된 값을 onSave 콜백으로 전달
+                      await widget.onSave(
+                        nameController.text.trim(),
+                        idController.text.trim(),
+                        phoneController.text.trim(),
+                        emailController.text.trim(),
+                      );
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: const Text('저장'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
