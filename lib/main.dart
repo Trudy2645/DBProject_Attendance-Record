@@ -5,34 +5,34 @@ void main() {
   runApp(const MyApp());
 }
 
-const Color primaryOrange = Color(0xFFE8823A);
+const Color primaryOrange = Color(0xFFE8823A); // 색 설정
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatelessWidget { // MyApp 클래스가 StatelessWidet을 상속했다는것을 의미
   const MyApp({super.key});
-
+//StatelessWidget : 상태가 없는 위젯 -> 위젯 내부의 데이터가 변하지 않는 ui요소 만들때 사용
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context) { // StatelessWidget 상속해 사용시 반드시 오버라이드해야함
+    return MaterialApp( // MaterialApp에 반환할 각 변수값들 설정하는듯
       title: '출석부 데모',
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: primaryOrange),
+        colorScheme: ColorScheme.fromSeed(seedColor: primaryOrange), // 스키마 : 데이터 논리구조와 제약조건 정의한것 from Adsp 즉 color에 대한 구조 or 제약 조건 설정하는 라인인것같다
       ),
       home: const HomePage(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class HomePage extends StatefulWidget { // 상속 사용, StatefulWidget : 상태가 있는 위젯으로 사용자 입력에 따라 상호작용하여 상태 변경함
+  const HomePage({super.key}); // key 매개변수를 부모클래스인 widget의 생성자에게 전달
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState(); // 화살표 문법으로 함수 본문이 단일 표현식임을 나타낸다
 }
 
 class _HomePageState extends State<HomePage> {
-  final ProfileService profileService = ProfileService();
-
+  final ProfileService profileService = ProfileService(); // 생성자 정의
+// 각 변수들 초기화
   String name = '';
   String studentId = '';
   String phone = '';
@@ -40,15 +40,15 @@ class _HomePageState extends State<HomePage> {
   bool _isLoading = true;
 
   @override
-  void initState() {
+  void initState() { // 상태 초기화 함수
     super.initState();
     _loadProfileData();
   }
 
-  Future<void> _loadProfileData() async {
+  Future<void> _loadProfileData() async { //비동기 처리 사용
     final profileData = await profileService.loadProfile();
-    if (mounted) {
-      setState(() {
+    if (mounted) { //profileData 위젯트리 안에 정상적 존재시 작업 실행
+      setState(() { //setter : 특정 클래스의 변수에 값 할당할때 사용
         name = profileData['name']!;
         studentId = profileData['studentId']!;
         phone = profileData['phone']!;
@@ -57,15 +57,16 @@ class _HomePageState extends State<HomePage> {
       });
     }
   }
-
-  Future<void> _resetProfile() async {
-    await profileService.clearProfile();
+  // 여기서 대괄호가 리스트는 아닌거같고 ai한테 물어보니 map형의 자료에 key로 접근하는 방식이라는데 main코드에는 없고
+  // profile_service 파일에 map관련해서 loadprofile 이 있는걸 확안했습니다
+  Future<void> _resetProfile() async { // Profile 데이터 모두 비움
+    await profileService.clearProfile(); // 정보 제거 메소드 불러와 사용
     await _loadProfileData();
 
-    if (mounted) {
+    if (mounted) { // mounted : 불린값으로써 state객체가 위젯트리 안에 존재하는지 여부를 불린값으로 반환
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('프로필이 초기화되었습니다.'), duration: Duration(seconds: 2)),
-      );
+      ); //SnackBar : 사용자에게 빠르고 간단한 메시지 보여줌. 위 코드는 프로필 초기화 멘트를 2초동안 띄워줌
     }
   }
 
@@ -73,7 +74,7 @@ class _HomePageState extends State<HomePage> {
   void _showEditProfileDialog() {
     showDialog(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: true, // 다이얼로그 닫는 방법을 설정. true : 다이얼로그 외부 배경 탭시 자동으로 닫힘. false : 다이얼로그 내부 버튼 등 '명시적' 행위 통해서만 닫기 가능
       builder: (context) {
         // 별도로 분리된 다이얼로그 위젯을 호출합니다.
         return EditProfileDialog(
@@ -83,7 +84,7 @@ class _HomePageState extends State<HomePage> {
           initialEmail: email,
           onSave: (newName, newId, newPhone, newEmail) async {
             // 저장 로직은 HomePage에서 그대로 처리합니다.
-            await profileService.saveProfile(
+            await profileService.saveProfile( //정보 저장 메소드 불러오기
               name: newName,
               studentId: newId,
               phone: newPhone,
@@ -91,7 +92,7 @@ class _HomePageState extends State<HomePage> {
             );
 
             if (mounted) {
-              setState(() {
+              setState(() { // 위젯트리에 있을때는 값을 '상태' 변수에 저장
                 name = newName;
                 studentId = newId;
                 phone = newPhone;
@@ -99,7 +100,7 @@ class _HomePageState extends State<HomePage> {
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('프로필이 저장되었습니다.'), duration: Duration(seconds: 2)),
-              );
+              ); // 저장완료 메시지 2초간 출력
             }
           },
         );
@@ -107,47 +108,48 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  //Scaffold : 앱 화면의 기본적이고 구조적인 레이아웃 구축하는 위젯
   @override
   Widget build(BuildContext context) {
     // HomePage의 UI 코드는 변경이 없습니다.
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        elevation: 0.6,
-        backgroundColor: Colors.white,
-        centerTitle: false,
+      backgroundColor: Colors.grey.shade50, // 배경색 설정
+      appBar: AppBar( // 앱 바의 스펙 설정
+        elevation: 0.6, // 위젯이 얼마나 떠있는가 ( 입체감 표현인거같은데 맞나요 )
+        backgroundColor: Colors.white, // 배경색
+        centerTitle: false, // 안드로이드 운영체제 기본값으로 제목을 왼쪽정렬로 표시함
         title: const Row(
           children: [
-            Icon(Icons.book_outlined, color: primaryOrange),
-            SizedBox(width: 8),
+            Icon(Icons.book_outlined, color: primaryOrange), //아이콘
+            SizedBox(width: 8), // 글자크기
             Text('출석부', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
           ],
         ),
         actions: [
-          IconButton(
+          IconButton( // 버튼 모양 설정
             icon: const Icon(Icons.refresh, color: Colors.grey),
-            onPressed: _resetProfile,
+            onPressed: _resetProfile, // 버튼 눌렀을시 실행하는 함수. 즉 이 버튼은 프로필 초기화 버튼이다
             tooltip: '프로필 초기화',
           ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.0),
+          if (_isLoading) // loading중인가? 가 답이 true일때
+            const Padding( // padding : 하나의 자식 위젯을 가지는데 이 자식 위젯의 크기를 넓혀줌
+              padding: EdgeInsets.symmetric(horizontal: 24.0), // 자식 위젯 크기를 얼마나 키울건지 결정. symmetric은 수평,수직 방향에 동일한 크기 적용
               child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.0)),
             )
           else
             Padding(
-              padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+              padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8), // 필요한 방향만 선택적으로 적용
               child: Row(
                 children: [
                   Text(name, style: TextStyle(color: Colors.grey.shade700)),
                   const SizedBox(width: 10),
-                  GestureDetector(
-                    onTap: _showEditProfileDialog,
+                  GestureDetector( // 동작 감지했을때 실행되는 메소드
+                    onTap: _showEditProfileDialog, // 탭 감지했을 때 실행하는 메소드 -> 프로필 수정 다이얼로그를 보여준다
                     child: CircleAvatar(
                       radius: 18,
                       backgroundColor: primaryOrange,
                       child: Text(
-                        name.isNotEmpty ? name[0] : '?',
+                        name.isNotEmpty ? name[0] : '?', // 이름 비어있지 않으면 name[0] 할당 비어있으면 ? 할당
                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                       ),
                     ),
@@ -159,7 +161,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: const Center(
         child: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(16.0), // 상하좌우 네 방향 모두 패딩 적용
           child: Text(
             '오른쪽 상단 프로필을 눌러 정보를 수정하세요.\n앱을 종료해도 데이터는 유지됩니다.',
             textAlign: TextAlign.center,
@@ -174,13 +176,13 @@ class _HomePageState extends State<HomePage> {
 // -----------------------------------------------------------------------------
 // 다이얼로그의 내용물을 별도의 StatefulWidget으로 분리
 // -----------------------------------------------------------------------------
-class EditProfileDialog extends StatefulWidget {
+class EditProfileDialog extends StatefulWidget { // 프로필 수정 다이얼로그 내용물들
   final String initialName;
   final String initialStudentId;
   final String initialPhone;
   final String initialEmail;
   final Future<void> Function(String name, String studentId, String phone, String email) onSave;
-
+// 위의 모든 변수들 Future 이용해 한번에 반환
   const EditProfileDialog({
     super.key,
     required this.initialName,
@@ -189,7 +191,7 @@ class EditProfileDialog extends StatefulWidget {
     required this.initialEmail,
     required this.onSave,
   });
-
+//required 이용해 값이 반드시 할당되게 함
   @override
   State<EditProfileDialog> createState() => _EditProfileDialogState();
 }
@@ -200,9 +202,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   late final TextEditingController idController;
   late final TextEditingController phoneController;
   late final TextEditingController emailController;
-
+// 프로필 편집 다이얼로그의 state 설정
   @override
-  void initState() {
+  void initState() { // 초기화
     super.initState();
     // initState에서 컨트롤러를 안전하게 생성합니다.
     nameController = TextEditingController(text: widget.initialName);
@@ -220,6 +222,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     emailController.dispose();
     super.dispose();
   }
+  // 각 컨트롤러 해제
 
   // 재사용 가능한 입력 필드 위젯
   Widget _buildInputField({
@@ -229,19 +232,19 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }) {
     return TextField(
       controller: controller,
-      decoration: InputDecoration(
+      decoration: InputDecoration( // 위젯의 디자인 결정
         prefixIcon: Icon(icon, color: Colors.grey.shade600),
         hintText: hint,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        border: OutlineInputBorder(
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12), // 수직 수평방향으로 패딩
+        border: OutlineInputBorder( // border : 위젯에 테두리 선 그릴때 사용
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
-        enabledBorder: OutlineInputBorder(
+        enabledBorder: OutlineInputBorder( // 활성화 상태의 테두리 ( 입력필드가 활성화되어있을때 적용)
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
-        focusedBorder: OutlineInputBorder(
+        focusedBorder: OutlineInputBorder( // 위젯이 활성화도 되어있고 포커스도 되어있을 때 테두리 적용
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: primaryOrange, width: 1.5),
         ),
@@ -254,12 +257,12 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     return Dialog(
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // 둥근 사각형 테두리
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min, // mainAxisSize : row와 col에 얼마만큼의 공간 허락할지 결정
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -274,9 +277,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               ),
               const SizedBox(height: 8),
               Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
+                margin: const EdgeInsets.symmetric(vertical: 8), // margin : 위젯의 바깥쪽 여백 padding : 위젯의 안쪽 여백
                 child: ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: nameController,
+                  valueListenable: nameController, //valueListenable : 단일값을 감시하며 값 변경시 알림 받게 해주는 인터페이스
                   builder: (context, value, _) {
                     final txt = value.text;
                     final firstChar = txt.isNotEmpty ? txt[0] : (widget.initialName.isNotEmpty ? widget.initialName[0] : '?');
@@ -301,9 +304,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
               _buildInputField(controller: emailController, hint: '이메일', icon: Icons.email_outlined),
               const SizedBox(height: 16),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.end, // row와 col에서 mainaxis 따라 자식 위젯들 어떻게 정렬할건지 결정
                 children: [
-                  TextButton(
+                  TextButton( // 텍스트 버튼의 구성물
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -315,7 +318,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                     child: const Text('취소'),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton(
+                  ElevatedButton( //elevated버튼의 구성물
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryOrange,
                       foregroundColor: Colors.white,
@@ -324,14 +327,14 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                     ),
                     onPressed: () async {
                       // 변경된 값을 onSave 콜백으로 전달
-                      await widget.onSave(
+                      await widget.onSave( // trim : 문자열 양 끝의 공백 문자 제거시 사용
                         nameController.text.trim(),
                         idController.text.trim(),
                         phoneController.text.trim(),
                         emailController.text.trim(),
                       );
                       if (mounted) {
-                        Navigator.of(context).pop();
+                        Navigator.of(context).pop(); // 위젯트리에 존재할시 navigator.of(context)를 스택에서 빼냄
                       }
                     },
                     child: const Text('저장'),
